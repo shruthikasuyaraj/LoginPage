@@ -1,0 +1,15 @@
+{
+  "name": "hope-login",
+  "version": "1.0.0",
+  "description": "Simple login/register with SQLite and remember-me cookie",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.6",
+    "express": "^4.18.2",
+    "sqlite3": "^5.1.6"
+  }
+}

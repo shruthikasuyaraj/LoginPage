@@ -1,0 +1,126 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width,initial-scale=1" />
+		<title>Hope — Login</title>
+		<style>
+			:root{
+				--bg:#0b0b0b;
+				--panel:#062a12;
+				--accent:#ff69b4;
+				--text:#bfeec9;
+				--muted:#7fbf9a;
+			}
+			html,body{height:100%;margin:0;font-family:Arial,Helvetica,sans-serif;background:linear-gradient(180deg,var(--bg),#07120a);color:var(--text)}
+			.wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:24px}
+			.card{background:linear-gradient(180deg,var(--panel),#03321a);padding:28px;border-radius:12px;box-shadow:0 6px 30px rgba(0,0,0,.6);width:380px;max-width:95%}
+			h1{margin:0 0 8px;font-size:22px;color:var(--muted)}
+			p.lead{margin:0 0 18px;color:var(--text);opacity:.9}
+			label{display:block;font-size:13px;margin-bottom:6px;color:var(--muted)}
+			input[type=text],input[type=password]{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,.3);background:#071e12;color:var(--text);box-sizing:border-box}
+			.row{display:flex;gap:10px}
+			.btn{display:inline-block;padding:10px 14px;border-radius:8px;border:0;background:var(--accent);color:#000;font-weight:700;cursor:pointer}
+			.btn.secondary{background:transparent;border:1px solid var(--muted);color:var(--muted)}
+			.muted{color:var(--muted);font-size:13px}
+			.actions{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+			.notice{margin-top:12px;padding:10px;border-radius:8px;background:rgba(255,105,180,0.06);color:var(--accent);font-weight:600}
+			.link{color:var(--accent);cursor:pointer;text-decoration:underline}
+		</style>
+	</head>
+	<body>
+		<div class="wrap">
+			<div class="card">
+				<h1>Welcome to Hope</h1>
+				<p class="lead">Register or login. Check "Remember me" to stay signed in.</p>
+
+				<div id="logged" style="display:none">
+					<div class="muted">Signed in as <strong id="who"></strong></div>
+					<div style="margin-top:12px">
+						<button class="btn" id="logout">Logout</button>
+					</div>
+				</div>
+
+				<div id="forms">
+					<div id="register">
+						<label>Username</label>
+						<input id="reg_user" type="text" placeholder="choose a username" />
+						<label style="margin-top:8px">Password</label>
+						<input id="reg_pass" type="password" placeholder="choose a password" />
+						<div class="actions">
+							<button class="btn" id="do_register">Register</button>
+							<button class="btn secondary" id="show_login">I already have an account</button>
+						</div>
+					</div>
+
+					<div id="login" style="display:none;margin-top:14px">
+						<label>Username</label>
+						<input id="log_user" type="text" placeholder="your username" />
+						<label style="margin-top:8px">Password</label>
+						<input id="log_pass" type="password" placeholder="your password" />
+						<div style="margin-top:8px;display:flex;align-items:center;gap:8px">
+							<input id="remember" type="checkbox" /> <span class="muted">Remember me</span>
+						</div>
+						<div class="actions">
+							<button class="btn" id="do_login">Login</button>
+							<button class="btn secondary" id="show_register">Create account</button>
+						</div>
+					</div>
+				</div>
+
+				<div id="msg" style="margin-top:12px"></div>
+			</div>
+		</div>
+
+		<script>
+			const el = id => document.getElementById(id);
+			const show = (id) => { document.querySelectorAll('#forms > div').forEach(d=>d.style.display='none'); el(id).style.display='block'; };
+
+			async function postJSON(url, body){
+				const r = await fetch(url, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+				return r.json();
+			}
+
+			el('do_register').onclick = async () => {
+				const username = el('reg_user').value.trim();
+				const password = el('reg_pass').value;
+				const res = await postJSON('/api/register',{username,password});
+				if(res.ok){ el('msg').innerHTML = '<div class="notice">Registered successfully — you can now login</div>'; show('login'); }
+				else el('msg').innerHTML = '<div class="notice">'+(res.error||'Error')+'</div>';
+			};
+
+			el('do_login').onclick = async () => {
+				const username = el('log_user').value.trim();
+				const password = el('log_pass').value;
+				const remember = el('remember').checked;
+				const res = await postJSON('/api/login',{username,password,remember});
+				if(res.ok){ showLogged(res.username); }
+				else el('msg').innerHTML = '<div class="notice">'+(res.error||'Login failed')+'</div>';
+			};
+
+			el('show_login').onclick = ()=>show('login');
+			el('show_register').onclick = ()=>show('register');
+
+			function showLogged(username){
+				el('forms').style.display='none';
+				el('logged').style.display='block';
+				el('who').textContent = username;
+				el('msg').innerHTML='';
+			}
+
+			el('logout').onclick = async () => {
+				await postJSON('/api/logout',{});
+				el('forms').style.display='block';
+				el('logged').style.display='none';
+			};
+
+			(async ()=>{
+				try{
+					const r = await fetch('/api/me');
+					const j = await r.json();
+					if(j.logged) showLogged(j.username);
+				}catch(e){console.warn(e)}
+			})();
+		</script>
+	</body>
+</html>
